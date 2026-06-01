@@ -756,27 +756,29 @@ function updateProgress() {
 }
 
 // ──────────────────────────────────────────────
-//  BUILD MESSAGE
+//  BUILD MESSAGE  (plain text — no parse_mode)
 // ──────────────────────────────────────────────
 function buildMessage() {
   const now = new Date().toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' });
-  let msg = `📋 *Новый бриф на дизайн*\n🕐 ${now}\n\n`;
+  const line = '─'.repeat(28);
+  let msg = `📋 Новый бриф на дизайн\n${line}\n🕐 ${now}\n${line}\n\n`;
 
   steps.forEach(s => {
     const val = (answers[s.id] || []).join(', ') || '—';
-    msg += `*${labels[s.id]}:* ${val}\n`;
+    msg += `${labels[s.id]}:\n  ${val}\n`;
 
-    // append extra texts
+    // append extra texts and file names
     if (s.special && s.opts) {
       s.opts.forEach(o => {
         if (!o.extra) return;
         const key = s.id + '_' + o.extra;
-        const txt = extraText[key];
+        const txt   = extraText[key];
         const files = attachedFiles[key];
-        if (txt) msg += `  └ ${o.title}: ${txt}\n`;
-        if (files && files.length) msg += `  └ Файлы (${o.title}): ${files.map(f=>f.name).join(', ')}\n`;
+        if (txt)              msg += `  └ ${o.title}: ${txt}\n`;
+        if (files && files.length) msg += `  └ Файлы (${o.title}): ${files.map(f => f.name).join(', ')}\n`;
       });
     }
+    msg += '\n';
   });
   return msg;
 }
@@ -797,7 +799,7 @@ async function submitBrief() {
     const res = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: TG_CHAT_ID, text: msg, parse_mode: 'Markdown' })
+      body: JSON.stringify({ chat_id: TG_CHAT_ID, text: msg })
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.description || 'Telegram API error');
