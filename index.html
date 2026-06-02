@@ -198,6 +198,41 @@ body::before{
 .file-item-rm:hover{color:#e07070;}
 .file-error{font-size:11px;color:#e07070;margin-top:6px;}
 
+/* ── COLOR PALETTE ── */
+.palette-wrap{margin-top:14px;}
+.palette-sublabel{font-size:12px;color:var(--muted);margin-bottom:8px;}
+.palette-grid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:5px;margin-bottom:10px;
+}
+@media(max-width:380px){.palette-grid{grid-template-columns:repeat(4,1fr);}}
+.palette-swatch{
+  aspect-ratio:1;border-radius:6px;cursor:pointer;
+  border:2px solid transparent;position:relative;
+  transition:transform 0.12s,border-color 0.12s;
+  -webkit-tap-highlight-color:transparent;
+}
+.palette-swatch:active{transform:scale(0.88);}
+@media(hover:hover){.palette-swatch:hover{transform:scale(1.08);z-index:1;}}
+.palette-swatch.sel{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,0.6);}
+.palette-swatch.sel::after{
+  content:'✓';position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;
+  color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.9);
+}
+.palette-chips{display:flex;flex-wrap:wrap;gap:5px;min-height:0;margin-bottom:6px;}
+.palette-chip{
+  display:flex;align-items:center;gap:5px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:20px;padding:4px 8px 4px 5px;
+  font-size:11px;color:var(--text);cursor:pointer;
+}
+.palette-chip:hover{border-color:var(--border-hover);}
+.chip-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1px solid rgba(255,255,255,0.15);}
+.chip-rm{color:var(--muted);font-size:11px;margin-left:1px;}
+
 /* ── CONTACT STEP ── */
 .contact-fields{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
 .contact-field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;}
@@ -321,7 +356,7 @@ body::before{
 <div class="quiz-shell">
 
   <div class="quiz-header">
-    <div class="eyebrow">Р.И.М. - БРИФ - ДИЗ</div>
+    <div class="eyebrow">Дизайн-студия</div>
     <h1>Расскажите<br>о вашем проекте</h1>
     <p>10 шагов — и мы поймём, что именно нужно сделать</p>
   </div>
@@ -435,10 +470,10 @@ const steps = [
     hint: 'Фирменные цвета или стоп-цвета', multi: false,
     special: 'colors',
     opts: [
-      { icon: '✅', title: 'Есть гайдлайн',   sub: 'предоставим цвета',             extra: 'guideline' },
-      { icon: '🎛️', title: 'Есть предпочтения', sub: 'расскажем на встрече' },
-      { icon: '🆓', title: 'Нет ограничений',  sub: 'полная свобода' },
-      { icon: '🚫', title: 'Есть стоп-цвета',  sub: 'определённые цвета нельзя',    extra: 'stopcolors' },
+      { icon: '✅', title: 'Есть гайдлайн',      sub: 'предоставим цвета',          extra: 'guideline' },
+      { icon: '🎛️', title: 'Есть предпочтения', sub: 'выберем цвета вместе',        extra: 'preferences' },
+      { icon: '🆓', title: 'Нет ограничений',    sub: 'полная свобода' },
+      { icon: '🚫', title: 'Есть стоп-цвета',    sub: 'определённые цвета нельзя',  extra: 'stopcolors' },
     ]
   },
   // 7 — РЕФЕРЕНСЫ (со спецлогикой)
@@ -502,6 +537,97 @@ const extraText = {};        // id_sub → string
 const attachedFiles = {};    // id_sub → File[]
 
 // ──────────────────────────────────────────────
+//  COLOR PALETTE DATA
+// ──────────────────────────────────────────────
+const PALETTE = [
+  { hex:'#000000', name:'Чёрный' },
+  { hex:'#808080', name:'Серый' },
+  { hex:'#c0c0c0', name:'Серебро' },
+  { hex:'#ffffff', name:'Белый' },
+  { hex:'#000080', name:'Тёмно-синий' },
+  { hex:'#0000ff', name:'Синий' },
+  { hex:'#008080', name:'Бирюзовый' },
+  { hex:'#00ffff', name:'Аква' },
+  { hex:'#008000', name:'Зелёный' },
+  { hex:'#00ff00', name:'Лайм' },
+  { hex:'#808000', name:'Оливковый' },
+  { hex:'#ffff00', name:'Жёлтый' },
+  { hex:'#800000', name:'Бордовый' },
+  { hex:'#ff0000', name:'Красный' },
+  { hex:'#800080', name:'Фиолетовый' },
+  { hex:'#ff00ff', name:'Фуксия' },
+  { hex:'#ff8c00', name:'Оранжевый' },
+  { hex:'#ffd700', name:'Золотой' },
+  { hex:'#ff69b4', name:'Розовый' },
+  { hex:'#4169e1', name:'Королевский синий' },
+  { hex:'#40e0d0', name:'Бирюзовый св.' },
+  { hex:'#7cfc00', name:'Зелёный яркий' },
+  { hex:'#f5deb3', name:'Пшеничный' },
+  { hex:'#8b4513', name:'Коричневый' },
+];
+
+const paletteSelected = {}; // key → Set of hex
+
+function initPalettes() {
+  document.querySelectorAll('[id^="pal_"]').forEach(gridEl => {
+    const key = gridEl.id.replace('pal_', '');
+    if (!paletteSelected[key]) paletteSelected[key] = new Set();
+    gridEl.innerHTML = PALETTE.map(c => `
+      <div class="palette-swatch${paletteSelected[key].has(c.hex) ? ' sel' : ''}"
+           style="background:${c.hex}"
+           title="${c.name} ${c.hex}"
+           onclick="toggleSwatch('${key}','${c.hex}','${c.name}')"></div>
+    `).join('');
+    renderChips(key);
+  });
+}
+
+function toggleSwatch(key, hex, name) {
+  if (!paletteSelected[key]) paletteSelected[key] = new Set();
+  const sel = paletteSelected[key];
+  if (sel.has(hex)) sel.delete(hex); else sel.add(hex);
+  // update swatch
+  const gridEl = document.getElementById('pal_' + key);
+  if (gridEl) {
+    gridEl.querySelectorAll('.palette-swatch').forEach(sw => {
+      const swHex = sw.style.background;
+      // compare by background style
+      if (sw.title.startsWith(name)) {
+        sw.classList.toggle('sel', sel.has(hex));
+      }
+    });
+    // re-render to be safe
+    gridEl.innerHTML = PALETTE.map(c => `
+      <div class="palette-swatch${sel.has(c.hex) ? ' sel' : ''}"
+           style="background:${c.hex}"
+           title="${c.name} ${c.hex}"
+           onclick="toggleSwatch('${key}','${c.hex}','${c.name}')"></div>
+    `).join('');
+  }
+  renderChips(key);
+}
+
+function renderChips(key) {
+  const chipsEl = document.getElementById('chips_' + key);
+  if (!chipsEl) return;
+  const sel = paletteSelected[key] || new Set();
+  if (sel.size === 0) { chipsEl.innerHTML = ''; return; }
+  const items = PALETTE.filter(c => sel.has(c.hex));
+  chipsEl.innerHTML = items.map(c => `
+    <span class="palette-chip" onclick="toggleSwatch('${key}','${c.hex}','${c.name}')">
+      <span class="chip-dot" style="background:${c.hex}"></span>
+      ${c.name}
+      <span class="chip-rm">✕</span>
+    </span>`).join('');
+}
+
+function getPaletteText(key) {
+  const sel = paletteSelected[key];
+  if (!sel || sel.size === 0) return '';
+  return PALETTE.filter(c => sel.has(c.hex)).map(c => `${c.name} (${c.hex})`).join(', ');
+}
+
+// ──────────────────────────────────────────────
 //  BUILD
 // ──────────────────────────────────────────────
 function buildSteps() {
@@ -537,6 +663,8 @@ function buildSteps() {
       inpEl.addEventListener('change', () => handleFiles(key, inpEl.files));
     });
   });
+
+  initPalettes();
 }
 
 function buildContactHTML(idx) {
@@ -587,13 +715,32 @@ function buildQuizHTML(s, idx) {
 
       if (o.extra === 'guideline') {
         extrasHTML += `
-          <label>Опишите цвета или вставьте HEX-коды</label>
-          <textarea id="txt_${key}" placeholder="Например: фирменный синий #1A4C8B, белый #FFFFFF..." oninput="saveExtra('${key}')"></textarea>
+          <div class="palette-wrap">
+            <div class="palette-sublabel">Выберите фирменные цвета из палитры</div>
+            <div class="palette-chips" id="chips_${key}"></div>
+            <div class="palette-grid" id="pal_${key}"></div>
+            <label style="margin-top:4px">Или введите HEX-коды вручную</label>
+            <textarea id="txt_${key}" placeholder="Например: #1A4C8B, #FFFFFF..." oninput="saveExtra('${key}')" style="margin-top:6px"></textarea>
+          </div>
           ${buildDropHTML(key, 'Загрузить гайдлайн / брендбук')}`;
+      } else if (o.extra === 'preferences') {
+        extrasHTML += `
+          <div class="palette-wrap">
+            <div class="palette-sublabel">Выберите цвета, которые нравятся</div>
+            <div class="palette-chips" id="chips_${key}"></div>
+            <div class="palette-grid" id="pal_${key}"></div>
+            <label style="margin-top:4px">Или опишите словами</label>
+            <textarea id="txt_${key}" placeholder="Например: тёплые тона, пастель, ничего кислотного..." oninput="saveExtra('${key}')" style="margin-top:6px"></textarea>
+          </div>`;
       } else if (o.extra === 'stopcolors') {
         extrasHTML += `
-          <label>Какие цвета нельзя использовать?</label>
-          <textarea id="txt_${key}" placeholder="Например: красный, оранжевый, #FF0000..." oninput="saveExtra('${key}')"></textarea>`;
+          <div class="palette-wrap">
+            <div class="palette-sublabel">Отметьте цвета, которые нельзя использовать</div>
+            <div class="palette-chips" id="chips_${key}"></div>
+            <div class="palette-grid" id="pal_${key}"></div>
+            <label style="margin-top:4px">Или опишите</label>
+            <textarea id="txt_${key}" placeholder="Например: красный, оранжевый, #FF0000..." oninput="saveExtra('${key}')" style="margin-top:6px"></textarea>
+          </div>`;
       } else if (o.extra === 'reffiles') {
         extrasHTML += `
           <label>Загрузите файлы с референсами</label>
@@ -772,9 +919,11 @@ function buildMessage() {
       s.opts.forEach(o => {
         if (!o.extra) return;
         const key = s.id + '_' + o.extra;
-        const txt   = extraText[key];
-        const files = attachedFiles[key];
-        if (txt)              msg += `  └ ${o.title}: ${txt}\n`;
+        const palTxt  = getPaletteText(key);
+        const txt     = extraText[key];
+        const files   = attachedFiles[key];
+        if (palTxt)            msg += `  └ ${o.title} (палитра): ${palTxt}\n`;
+        if (txt)               msg += `  └ ${o.title} (текст): ${txt}\n`;
         if (files && files.length) msg += `  └ Файлы (${o.title}): ${files.map(f => f.name).join(', ')}\n`;
       });
     }
@@ -844,6 +993,7 @@ function restart() {
   Object.keys(answers).forEach(k => delete answers[k]);
   Object.keys(extraText).forEach(k => delete extraText[k]);
   Object.keys(attachedFiles).forEach(k => delete attachedFiles[k]);
+  Object.keys(paletteSelected).forEach(k => delete paletteSelected[k]);
   current = 0;
   document.getElementById('success').classList.remove('active');
   document.getElementById('progress-wrap').style.display = '';
